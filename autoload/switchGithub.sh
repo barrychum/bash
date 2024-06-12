@@ -15,13 +15,6 @@ switch_github() {
     awk '/user:/{print $2}' "$HOSTS_FILE" | tr -d ' '
   }
 
-  # Function to switch user
-  switch_user() {
-    local username=$1
-    echo "Switching to user: $username"
-    gh auth switch -u "$username"
-  }
-
   # List all users and store in an array
   local users=()
   while IFS= read -r user; do
@@ -46,8 +39,9 @@ switch_github() {
 
   # Validate the input and switch to the selected user
   if [[ $user_number -gt 0 && $user_number -le ${#users[@]} ]]; then
-    local selected_user=${users[$((user_number-1))]}
-    switch_user "$selected_user"
+    local selected_user=${users[$((user_number))]}
+    echo "Switching to user: $selected_user"
+    gh auth switch -u "$selected_user"
   else
     echo "Invalid selection. Please enter a valid number."
     return 1
@@ -58,5 +52,5 @@ switch_github() {
 
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    replaceAll "$@"
+    switch_github "$@"
 fi

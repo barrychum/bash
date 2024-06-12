@@ -97,5 +97,5 @@ create_zip() {
 # Only run create_zip if the script is executed directly.
 # Check shebang.  zsh won't work.
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    pipinstall "$@"
+    create_zip "$@"
 fi
