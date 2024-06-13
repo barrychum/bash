@@ -5,20 +5,24 @@ remove_dup_path() {
     echo "${NEW_PATH%:}" # Remove trailing colon
 }
 
-
 remove_invalid_path() {
     local input_path="$1"
-    IFS=':' read -r -a path_array <<<"$input_path"
+    local IFS=':'
     local new_path=""
-    for element in "${path_array[@]}"; do
-        if [ -d "$element" ]; then
+    local unique_paths=""
+
+    # Split the input_path into an array
+    for element in $input_path; do
+        if [ -d "$element" ] && [[ ":$unique_paths:" != *":$element:"* ]]; then
             if [ -z "$new_path" ]; then
                 new_path="$element"
             else
                 new_path="$new_path:$element"
             fi
+            unique_paths="$unique_paths:$element"
         fi
     done
+
     echo "$new_path"
 }
 
