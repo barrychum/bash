@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Detect shell and set options accordingly
+if [ -n "$ZSH_VERSION" ]; then
+    emulate -L sh
+    setopt KSH_ARRAYS
+fi
+
 # Define the abc function
 switch_github() {
   # Path to the hosts.yml file
@@ -39,7 +45,7 @@ switch_github() {
 
   # Validate the input and switch to the selected user
   if [[ $user_number -gt 0 && $user_number -le ${#users[@]} ]]; then
-    local selected_user=${users[$((user_number))]}
+    local selected_user=${users[$((user_number-1))]}
     echo "Switching to user: $selected_user"
     gh auth switch -u "$selected_user"
   else
@@ -49,7 +55,6 @@ switch_github() {
 
   echo "Switch successful."
 }
-
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     switch_github "$@"
