@@ -12,6 +12,9 @@ ZIP_FILE="${INPUT_FILE}.zip"
 ENCRYPTED_FILE="${ZIP_FILE}.enc"
 ENC_SYM_KEY_FILE="symmetric_key.bin.enc"
 
+# Path to the public key
+PUBLIC_KEY_PATH="$HOME/.ssh/encryption.pub"
+
 # Zip the input file
 zip -q $ZIP_FILE $INPUT_FILE
 
@@ -22,7 +25,7 @@ SYM_KEY=$(openssl rand -base64 32)
 openssl enc -aes-256-cbc -salt -pbkdf2 -in $ZIP_FILE -out $ENCRYPTED_FILE -pass pass:$SYM_KEY
 
 # Encrypt the symmetric key using the public key with pkeyutl
-echo -n $SYM_KEY | openssl pkeyutl -encrypt -inkey public_key.pem -pubin -out $ENC_SYM_KEY_FILE
+echo -n $SYM_KEY | openssl pkeyutl -encrypt -inkey $PUBLIC_KEY_PATH -pubin -out $ENC_SYM_KEY_FILE
 
 # Combine the encrypted symmetric key and the encrypted file
 cat $ENC_SYM_KEY_FILE $ENCRYPTED_FILE > "${INPUT_FILE}.bundle"
