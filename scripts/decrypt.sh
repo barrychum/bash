@@ -8,30 +8,48 @@ fi
 
 # Define the input and output files
 ENCRYPTED_BUNDLE=$1
-DECRYPTED_FILE="${ENCRYPTED_BUNDLE%.bundle}.zip"
-
-# Extract the encrypted symmetric key (first 256 bytes) and the encrypted file
-ENC_SYM_KEY=$(head -c 256 "$ENCRYPTED_BUNDLE" | xxd -p -c 256)
-tail -c +257 "$ENCRYPTED_BUNDLE" >"${DECRYPTED_FILE}.enc"
+RANDOM_SUFFIX=$(uuidgen | tr -d '-')
+DECRYPTED_FILE="${ENCRYPTED_BUNDLE%.bundle}.zip.${RANDOM_SUFFIX}"
+ENCRYPTED_FILE="${ENCRYPTED_BUNDLE%.bundle}.enc.${RANDOM_SUFFIX}"
 
 # Path to the private key
 PRIVATE_KEY_PATH="$HOME/.ssh/encryption.key"
 
+if [ ! -f "$ENCRYPTED_BUNDLE" ]; then
+  echo "Error: Input file '$ENCRYPTED_BUNDLE' not found."
+  exit 1
+fi
+if [ ! -f "$PRIVATE_KEY_PATH" ]; then
+  echo "Error: Private key file '$PRIVATE_KEY_PATH' not found."
+  exit 1
+fi
+
+# Extract the encrypted symmetric key (first 256 bytes)
+ENC_SYM_KEY=$(head -c 256 "$ENCRYPTED_BUNDLE" | xxd -p -c 256)
+
 # Check if the private key file is password protected
-if openssl pkey -in $PRIVATE_KEY_PATH -noout -passin pass: 2>/dev/null; then
-  echo "The private key is not password protected."
+if openssl pkey -in $PRIVATE_KEY_PATH -noout -passin pass: 2>&1 | grep -q "unable to load"; then
+  echo "The private key is password protected."
 
   # Prompt for the private key password
   read -sp "Enter the private key password: " PRIVATE_KEY_PASSWORD
   echo
 
   # Decrypt the symmetric key using the private key with pkeyutl
-  SYM_KEY=$(echo "$ENC_SYM_KEY" | xxd -r -p | openssl pkeyutl -decrypt -inkey $PRIVATE_KEY_PATH -passin pass:"$PRIVATE_KEY_PASSWORD")
+  SYM_KEY=$(echo "$ENC_SYM_KEY" | xxd -r -p | openssl pkeyutl -decrypt -inkey $PRIVATE_KEY_PATH -passin pass:"$PRIVATE_KEY_PASSWORD" 2>&1)
+  if [ $? -ne 0 ]; then
+    echo "Error: OpenSSL command failed. Confirm your password and retry."
+    exit 1
+  fi
 else
-  echo "The private key is password protected."
+  echo "The private key is not password protected."
 
   # Decrypt the symmetric key using the private key with pkeyutl
-  SYM_KEY=$(echo "$ENC_SYM_KEY" | xxd -r -p | openssl pkeyutl -decrypt -inkey $PRIVATE_KEY_PATH)
+  SYM_KEY=$(echo "$ENC_SYM_KEY" | xxd -r -p | openssl pkeyutl -decrypt -inkey $PRIVATE_KEY_PATH 2>&1)
+  if [ $? -ne 0 ]; then
+    echo "Error: OpenSSL command failed. Failed to retrieve symmetric key."
+    exit 1
+  fi
 fi
 
 # Check if the decryption of the symmetric key was successful
@@ -40,12 +58,22 @@ if [ -z "$SYM_KEY" ]; then
   exit 1
 fi
 
+# Extract the encrypted file
+tail -c +257 "$ENCRYPTED_BUNDLE" >"$ENCRYPTED_FILE"
+
 # Decrypt the file using the symmetric key with pbkdf2
-openssl enc -d -aes-256-cbc -pbkdf2 -in "${DECRYPTED_FILE}.enc" -out "$DECRYPTED_FILE" -pass pass:"$SYM_KEY"
+openssl enc -d -aes-256-cbc -pbkdf2 -in "$ENCRYPTED_FILE" -out "$DECRYPTED_FILE" -pass pass:"$SYM_KEY"
 
 # Unzip the decrypted file
-# unzip -q "$DECRYPTED_FILE" -d "${DECRYPTED_FILE%.zip}"
-unzip -n "$DECRYPTED_FILE" -d .
+# unzip -n "$DECRYPTED_FILE" -d .
+output=$(unzip -n "$DECRYPTED_FILE" -d . | grep "inflating")
+
+# Check if the output contains the word "inflating"
+if echo "$output" | grep -q "inflating"; then
+  echo $output
+else
+  echo "File already exists. Unzip operation aborted."
+fi
 
 # Clean up
-rm "${DECRYPTED_FILE}.enc" "$DECRYPTED_FILE"
+rm "$ENCRYPTED_FILE" "$DECRYPTED_FILE"
