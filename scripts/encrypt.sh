@@ -28,10 +28,6 @@ ENC_SYM_KEY=$(echo -n $SYM_KEY | openssl pkeyutl -encrypt -pubin -inkey $PUBLIC_
 
 # Combine the encrypted symmetric key and the encrypted file
 cat <(echo "$ENC_SYM_KEY" | xxd -r -p) $ENCRYPTED_FILE > "${INPUT_FILE}.bundle"
-# {
-#  echo "$ENC_SYM_KEY" | xxd -r -p
-#  cat $ENCRYPTED_FILE
-# } > "${INPUT_FILE}.bundle"
 
 # Clean up
 rm $ZIP_FILE $ENCRYPTED_FILE
