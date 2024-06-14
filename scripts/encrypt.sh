@@ -7,8 +7,8 @@ if [ -z "$1" ]; then
 fi
 
 # Define the input and output files
-INPUT_FILE=$1
 RANDOM_SUFFIX=$(uuidgen | tr -d '-')
+INPUT_FILE=$1
 ZIP_FILE="${INPUT_FILE}.zip.${RANDOM_SUFFIX}"
 ENCRYPTED_FILE="${INPUT_FILE}.enc.${RANDOM_SUFFIX}"
 

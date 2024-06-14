@@ -30,31 +30,13 @@ ENC_SYM_KEY=$(head -c 256 "$ENCRYPTED_BUNDLE" | xxd -p -c 256)
 # Check if the private key file is password protected
 if openssl pkey -in $PRIVATE_KEY_PATH -noout -passin pass: 2>&1 | grep -q "unable to load"; then
   echo "The private key is password protected."
-
-  # Prompt for the private key password
-  read -sp "Enter the private key password: " PRIVATE_KEY_PASSWORD
-  echo
-
-  # Decrypt the symmetric key using the private key with pkeyutl
-  SYM_KEY=$(echo "$ENC_SYM_KEY" | xxd -r -p | openssl pkeyutl -decrypt -inkey $PRIVATE_KEY_PATH -passin pass:"$PRIVATE_KEY_PASSWORD" 2>&1)
-  if [ $? -ne 0 ]; then
-    echo "Error: OpenSSL command failed. Confirm your password and retry."
-    exit 1
-  fi
-else
-  echo "The private key is not password protected."
-
-  # Decrypt the symmetric key using the private key with pkeyutl
-  SYM_KEY=$(echo "$ENC_SYM_KEY" | xxd -r -p | openssl pkeyutl -decrypt -inkey $PRIVATE_KEY_PATH 2>&1)
-  if [ $? -ne 0 ]; then
-    echo "Error: OpenSSL command failed. Failed to retrieve symmetric key."
-    exit 1
-  fi
 fi
 
-# Check if the decryption of the symmetric key was successful
-if [ -z "$SYM_KEY" ]; then
-  echo "Failed to retrieve symmetric key."
+# Decrypt the symmetric key using the private key with pkeyutl
+# openssl will prompt for password if private key is password protected
+SYM_KEY=$(echo "$ENC_SYM_KEY" | xxd -r -p | openssl pkeyutl -decrypt -inkey $PRIVATE_KEY_PATH 2>&1)
+if [ $? -ne 0 ]; then
+  echo "Error: OpenSSL command failed. Failed to retrieve symmetric key."
   exit 1
 fi
 
