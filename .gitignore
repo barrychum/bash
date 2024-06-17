@@ -1,3 +1,5 @@
 *.pem
 *.key
 *.pub
+.env
+gpg_keys_backup
