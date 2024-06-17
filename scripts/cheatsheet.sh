@@ -31,7 +31,7 @@ files=()
 for dir in "${CHEATSHEET_DIRS[@]}"; do
   if [ -d "$dir" ]; then
     while IFS= read -r -d '' file; do
-      exclude_file "$file" || files+=("$file")
+      exclude_file "$file" || files+=("${file/#$HOME/\$HOME}")
     done < <(find "$dir" -type f -name "*.md" -print0)
   else
     echo "Directory not found: $dir"
@@ -52,6 +52,9 @@ if [ -z "$selected" ]; then
   echo "No cheatsheet selected."
   exit 1
 fi
+
+# Replace $HOME with the actual home directory path before opening the file
+selected="${selected/\$HOME/$HOME}"
 
 # Open the selected cheatsheet in the default Markdown viewer or editor
 open "$selected"
