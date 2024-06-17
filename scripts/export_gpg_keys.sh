@@ -1,9 +1,20 @@
 #!/bin/bash
 
-# Load environment variables from .env file if it exists
-if [ -f .env ]; then
-    export $(cat .env | xargs)
-fi
+# Define the .env file location
+ENV_FILE=".env"
+
+# Function to read a specific variable from the .env file
+get_env_var() {
+    local var_name="$1"
+    local value="${!var_name}"
+    if [ -z "$value" ]; then
+        value=$(grep "^${var_name}=" "$ENV_FILE" | cut -d '=' -f2-)
+    fi 
+    echo "$value"
+}
+
+# Read GPG_PASSPHRASE from the .env file
+GPG_PASSPHRASE=$(get_env_var "GPG_PASSPHRASE")
 
 # Check if the GPG_PASSPHRASE environment variable is set
 if [ -z "$GPG_PASSPHRASE" ]; then
