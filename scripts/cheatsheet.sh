@@ -58,3 +58,4 @@ selected="${selected/\$HOME/$HOME}"
 
 # Open the selected cheatsheet in the default Markdown viewer or editor
 open "$selected"
+
