@@ -3,3 +3,5 @@
 *.pub
 .env
 gpg_keys_backup
+scripts/test.sh
+play/
