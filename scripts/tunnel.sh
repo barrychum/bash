@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Read GPG_PASSPHRASE from the KeyVault
-# https://github.com/barrychum/keyvault
-if command -v get-keyvalue.sh &>/dev/null; then
-    CLOUDFLARE_TUNNEL_TOKEN=$(get-keyvalue.sh "CLOUDFLARE_TUNNEL_TOKEN")
-fi
-
 # Define available actions
 ACTIONS="start stop status"
 
@@ -33,18 +27,19 @@ is_cloudflared_running() {
   pgrep -x "cloudflared" >/dev/null 2>&1
 }
 
-# Get the token from the environment variable
-# token can be found from install and run a connector
-# in cloudflare tunnels setting
-TOKEN="$CLOUDFLARE_TUNNEL_TOKEN"
-
-echo -e "\n"
-
 # Check if TOKEN is set
-if [[ "$action" == "start" && -z "$TOKEN" ]]; then
-  echo "CLOUDFLARE_TUNNEL_TOKEN is required for the start action."
-  echo -e "\n"
-  exit 1
+if [[ "$action" == "start" ]]; then
+  # Read GPG_PASSPHRASE from the KeyVault
+  # https://github.com/barrychum/keyvault
+  if command -v get-keyvalue.sh &>/dev/null; then
+    TOKEN=$(get-keyvalue.sh "CLOUDFLARE_TUNNEL_TOKEN")
+  fi
+
+  if [[ -z "$TOKEN" ]]; then
+    echo "CLOUDFLARE_TUNNEL_TOKEN is required for the start action."
+    echo -e "\n"
+    exit 1
+  fi
 fi
 
 # Execute action based on argument
@@ -55,6 +50,7 @@ start)
   else
     echo "Starting tunnel..."
     cloudflared service install "$TOKEN"
+    unset TOKEN
   fi
   ;;
 stop)
