@@ -1,21 +1,10 @@
 #!/bin/bash
 
-
-# Function to read a specific variable from the .env file
-get_env_var() {
-    local var_name="$1"
-    local value="${!var_name}"
-    if [ -z "$value" ]; then
-        value=$(grep "^${var_name}=" "$ENV_FILE" | cut -d '=' -f2-)
-    fi 
-    echo "$value"
-}
-
-# Define the .env file location
-ENV_FILE=".env"
-
-# Read GPG_PASSPHRASE from the .env file
-CLOUDFLARE_TUNNEL_TOKEN=$(get_env_var "CLOUDFLARE_TUNNEL_TOKEN")
+# Read GPG_PASSPHRASE from the KeyVault
+# https://github.com/barrychum/keyvault
+if command -v get-keyvalue.sh &>/dev/null; then
+    CLOUDFLARE_TUNNEL_TOKEN=$(get-keyvalue.sh "CLOUDFLARE_TUNNEL_TOKEN")
+fi
 
 # Define available actions
 ACTIONS="start stop status"
