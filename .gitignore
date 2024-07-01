@@ -5,3 +5,4 @@
 gpg_keys_backup
 scripts/test.sh
 play/
+.DS_Store
