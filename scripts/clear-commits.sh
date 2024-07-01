@@ -39,3 +39,4 @@ git push -f origin main
 
 echo "Old commits removed and new branch pushed successfully."
 echo "Repository path: $(pwd)"
+
